@@ -7,71 +7,98 @@
   <title>Leitor de Textos</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <style>
-    :root {
-      --bg:#0f172a; --card:#1e293b; --card2:#273449;
-      --text:#e2e8f0; --muted:#94a3b8;
-      --accent:#38bdf8; --accent2:#0ea5e9; --danger:#ef4444;
-      --highlight:#fbbf24; --radius:12px;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; padding: 16px; min-height: 100vh;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg); color: var(--text);
-    }
-    .app { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-    header h1 { font-size: 22px; margin: 0 0 4px; }
-    header p { margin: 0; color: var(--muted); font-size: 14px; }
-    .panel { background: var(--card); border-radius: var(--radius); padding: 16px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-    .btn {
-      background: var(--card2); color: var(--text);
-      border: 1px solid #334155; padding: 10px 16px;
-      border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;
-    }
-    .btn:hover { border-color: var(--accent); }
-    .btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; }
-    .btn.primary:hover { background: var(--accent); }
-    .btn.danger { background: transparent; border-color: #7f1d1d; color: var(--danger); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
-    select {
-      background: var(--card2); color: var(--text);
-      border: 1px solid #334155; padding: 8px; border-radius: 8px; font-size: 14px;
-    }
-    #text {
-      width: 100%; min-height: 180px; background: var(--card2); color: var(--text);
-      border: 1px solid #334155; border-radius: 8px; padding: 12px;
-      font-size: 15px; font-family: inherit; resize: vertical;
-    }
-    #preview {
-      line-height: 1.7; font-size: 16px;
-      max-height: 60vh; overflow-y: auto; white-space: pre-wrap;
-    }
-    #preview span.current { background: var(--highlight); color: #0f172a; border-radius: 4px; padding: 0 2px; }
-    .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .history-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
-    .history-item {
-      background: var(--card2); border-radius: 8px; padding: 10px 12px;
-      display: flex; justify-content: space-between; gap: 12px; align-items: center;
-    }
-    .history-item .preview-text {
-      flex: 1; overflow: hidden; text-overflow: ellipsis;
-      white-space: nowrap; font-size: 14px; cursor: pointer;
-    }
-    .history-item .date { font-size: 12px; color: var(--muted); }
-    .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
-    .speed-value { min-width: 36px; text-align: center; color: var(--text); }
-    .hidden { display: none !important; }
-  </style>
+ <style>
+  :root, [data-theme="dark"] {
+    --bg:#0f172a; --card:#1e293b; --card2:#273449;
+    --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#38bdf8; --accent2:#0ea5e9;
+    --danger:#ef4444; --border-danger:#7f1d1d;
+    --highlight:#fbbf24; --on-highlight:#0f172a;
+    --border:#334155;
+    --radius:12px;
+    color-scheme: dark;
+  }
+  [data-theme="light"] {
+    --bg:#f8fafc; --card:#ffffff; --card2:#f1f5f9;
+    --text:#0f172a; --muted:#64748b;
+    --accent:#0284c7; --accent2:#0ea5e9;
+    --danger:#dc2626; --border-danger:#fecaca;
+    --highlight:#fde047; --on-highlight:#0f172a;
+    --border:#cbd5e1;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px; min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .app { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  header h1 { font-size: 22px; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; }
+  .panel {
+    background: var(--card); border-radius: var(--radius); padding: 16px;
+    transition: background-color 0.2s;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn {
+    background: var(--card2); color: var(--text);
+    border: 1px solid var(--border); padding: 10px 16px;
+    border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+  .btn.primary:hover { background: var(--accent); }
+  .btn.danger { background: transparent; border-color: var(--border-danger); color: var(--danger); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #themeBtn { font-size: 16px; padding: 8px 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  select {
+    background: var(--card2); color: var(--text);
+    border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 14px;
+  }
+  #text {
+    width: 100%; min-height: 180px; background: var(--card2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+    font-size: 15px; font-family: inherit; resize: vertical;
+  }
+  #preview {
+    line-height: 1.7; font-size: 16px;
+    max-height: 60vh; overflow-y: auto; white-space: pre-wrap;
+  }
+  #preview span.current {
+    background: var(--highlight); color: var(--on-highlight);
+    border-radius: 4px; padding: 0 2px;
+  }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .history-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
+  .history-item {
+    background: var(--card2); border-radius: 8px; padding: 10px 12px;
+    display: flex; justify-content: space-between; gap: 12px; align-items: center;
+    transition: background-color 0.2s;
+  }
+  .history-item .preview-text {
+    flex: 1; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font-size: 14px; cursor: pointer;
+  }
+  .history-item .date { font-size: 12px; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+  .speed-value { min-width: 36px; text-align: center; color: var(--text); }
+  .hidden { display: none !important; }
+</style>
 </head>
 <body>
   <div class="app">
     <header>
-      <h1>📖 Leitor de Textos</h1>
-      <p>Cole, digite ou importe um .txt e ouça em português brasileiro.</p>
-    </header>
+  <div>
+    <h1>📖 Leitor de Textos</h1>
+    <p>Cole, digite ou importe um .txt e ouça em português brasileiro.</p>
+  </div>
+  <button id="themeBtn" class="btn" title="Alternar tema">🌙</button>
+</header>
 
     <section class="panel controls">
       <button id="playBtn" class="btn primary">▶️ Ouvir</button>
@@ -332,9 +359,35 @@
     });
   }
 
+// ============ TEMA CLARO / ESCURO ============
+const THEME_KEY = 'leitor.theme';
+const themeBtn = $('themeBtn');
+const metaTheme = document.querySelector('meta[name="theme-color"]');
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  themeBtn.title = theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro';
+  if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#0f172a' : '#f8fafc');
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+  applyTheme(saved || (prefersLight ? 'light' : 'dark'));
+}
+
+themeBtn.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+initTheme();
+
   // ============ INIT ============
   renderHistory();
-  rateValueEl.textContent = parseFloat(rateEl.value).toFixed(1) + 'x';
+rateValueEl.textContent = parseFloat(rateEl.value).toFixed(1) + 'x';
 </script>
 </body>
 </html>
