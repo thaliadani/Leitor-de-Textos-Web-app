@@ -279,53 +279,142 @@
     pauseBtn.disabled = !playing;
     stopBtn.disabled = !playing;
   }
+// Limpa caracteres que travam o TTS
+function sanitizeText(text) {
+  return text
+    .replace(/\uFEFF/g, '')                         // BOM
+    .replace(/[\u200B-\u200D\u2060]/g, '')          // zero-width
+    .replace(/\u00A0/g, ' ')                        // espaço não separável
+    .replace(/[\u2018\u2019\u02BC]/g, "'")          // aspas simples "inteligentes"
+    .replace(/[\u201C\u201D]/g, '"')                // aspas duplas "inteligentes"
+    .replace(/[\u2013\u2014]/g, '-')                // en-dash / em-dash
+    .replace(/\u2026/g, '...')                      // …
+    .replace(/[\u2028\u2029]/g, '\n')               // separadores de linha Unicode
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '') // controles
+    .replace(/\r\n/g, '\n')                         // CRLF → LF
+    .replace(/\n{3,}/g, '\n\n')                     // reduz quebras excessivas
+    .trim();
+}
+
+// Aplica sanitização sempre que o usuário colar
+textEl.addEventListener('paste', () => {
+  setTimeout(() => {
+    const cleaned = sanitizeText(textEl.value);
+    if (cleaned !== textEl.value) {
+      const removed = textEl.value.length - cleaned.length;
+      textEl.value = cleaned;
+      console.log(`🧹 Sanitização removeu ${removed} caractere(s) invisível(is).`);
+    }
+  }, 0);
+});
+// Divide o texto em frases de até ~180 caracteres (limite seguro do Chrome)
+function splitIntoChunks(text, maxLen = 180) {
+  // Quebra em frases
+  const sentences = text.match(/[^.!?;\n]+[.!?;]?["']?\s*|[^.!?;\n]+$/g) || [text];
+  const chunks = [];
+  let buf = '';
+  for (const s of sentences) {
+    const sTrim = s.trim();
+    if (!sTrim) continue;
+    if ((buf + ' ' + sTrim).trim().length > maxLen && buf) {
+      chunks.push(buf.trim());
+      buf = sTrim;
+    } else {
+      buf = buf ? buf + ' ' + sTrim : sTrim;
+    }
+    // Se uma frase sozinha for maior que maxLen, quebra por espaço
+    if (buf.length > maxLen * 2) {
+      chunks.push(buf.trim());
+      buf = '';
+    }
+  }
+  if (buf.trim()) chunks.push(buf.trim());
+  return chunks;
+}
  async function startReading() {
-  const text = textEl.value.trim();
-  if (!text) return alert('Digite ou cole um texto primeiro.');
+  const raw = textEl.value;
+  if (!raw.trim()) return alert('Digite ou cole um texto primeiro.');
 
-  // ---- 1) DESTRAVA o motor (corrige causa #1 e #2) ----
-  speechSynthesis.resume();          // se ficou "paused", destrava
-  speechSynthesis.cancel();          // limpa fila
-  await new Promise(r => setTimeout(r, 80));  // respiro p/ alguns navegadores
+  // 1) Sanitiza SEMPRE ao iniciar (protege contra textos que vieram de outra origem)
+  const clean = sanitizeText(raw);
+  if (clean !== raw) {
+    textEl.value = clean;
+    console.log(`🧹 Texto sanitizado (${raw.length} → ${clean.length} caracteres)`);
+  }
 
-  // ---- 2) Prepara preview ----
+  // 2) Destrava motor
+  speechSynthesis.resume();
+  speechSynthesis.cancel();
+  await new Promise(r => setTimeout(r, 80));
+
+  // 3) Prepara preview
   textEl.classList.add('hidden');
   previewEl.classList.remove('hidden');
-  buildPreview(textEl.value);
+  buildPreview(clean);
   clearHighlight();
 
-  // ---- 3) Escolhe voz (fallback robusto) ----
+  // 4) Voz
   const voice = state.voice || getPtVoices()[0] || null;
+  const rate  = parseFloat(rateEl.value) || 1;
 
-  // ---- 4) Configura utterance ----
-  const u = new SpeechSynthesisUtterance(textEl.value);
-  u.lang   = (voice && voice.lang) || 'pt-BR';
-  u.rate   = parseFloat(rateEl.value) || 1;
-  u.pitch  = 1;
-  u.volume = 1;                        // garante que não está mudo
-  if (voice) u.voice = voice;
+  // 5) Chunking
+  const CHUNK_SIZE = 180;
+  const chunks = splitIntoChunks(clean, CHUNK_SIZE);
+  console.log(`📚 Texto dividido em ${chunks.length} bloco(s) de até ${CHUNK_SIZE} caracteres.`);
 
-  u.onstart   = () => console.log('🔊 TTS iniciou. Voz:', voice?.name || '(padrão)');
-  u.onboundary = (e) => { if (e.name === 'word' || e.name === undefined) highlightAt(e.charIndex); };
-  u.onend     = () => { setPlaying(false); state.paused = false; pauseBtn.textContent = '⏸️ Pausar'; clearHighlight(); };
-  u.onerror   = (e) => {
-    console.error('TTS erro:', e.error, e);
-    setPlaying(false); state.paused = false;
-  };
+  if (chunks.length > 200) {
+    const ok = confirm(
+      `⚠️ Texto muito longo (${clean.length} caracteres, ${chunks.length} blocos).\n` +
+      `A leitura pode levar muito tempo. Continuar?`
+    );
+    if (!ok) { stopReading(); return; }
+  }
 
-  state.utterance = u;
+  // 6) Fila de leitura
+  state.chunks = chunks;
+  state.chunkIndex = 0;
+  state.voice = voice;
+  state.rate = rate;
   setPlaying(true); state.paused = false;
   pauseBtn.textContent = '⏸️ Pausar';
 
-  // ---- 5) Aviso se não há voz ----
-  if (!speechSynthesis.getVoices().length) {
-    console.warn('⚠️ Nenhuma voz no sistema!');
+  speakNextChunk();
+  setTimeout(updateDiagnostics, 400);
+}
+
+function speakNextChunk() {
+  if (state.chunkIndex >= state.chunks.length) {
+    setPlaying(false); state.paused = false;
+    pauseBtn.textContent = '⏸️ Pausar';
+    clearHighlight();
+    return;
   }
+  const idx = state.chunkIndex;
+  const u = new SpeechSynthesisUtterance(state.chunks[idx]);
+  u.lang   = state.voice?.lang || 'pt-BR';
+  u.rate   = state.rate;
+  u.volume = 1;
+  if (state.voice) u.voice = state.voice;
 
+  // Offset acumulado para o destaque ficar no lugar certo
+  u.onboundary = (e) => {
+    if (e.name === 'word' || e.name === undefined) {
+      highlightAt(state.chunkOffsets?.[idx] ?? 0 + e.charIndex);
+    }
+  };
+  u.onend = () => {
+    state.chunkIndex++;
+    speakNextChunk();
+  };
+  u.onerror = (e) => {
+    if (e.error === 'interrupted' || e.error === 'canceled') return;
+    console.error('TTS erro no bloco', idx, e.error);
+    state.chunkIndex++;
+    speakNextChunk();
+  };
+
+  state.utterance = u;
   speechSynthesis.speak(u);
-
-  // Atualiza painel de diagnóstico
-  setTimeout(updateDiagnostics, 300);
 }
   function pauseReading() {
     if (!state.speaking) return;
@@ -340,13 +429,15 @@
     }
   }
   function stopReading() {
-    speechSynthesis.cancel();
-    setPlaying(false); state.paused = false;
-    pauseBtn.textContent = '⏸️ Pausar';
-    clearHighlight();
-    previewEl.classList.add('hidden');
-    textEl.classList.remove('hidden');
-  }
+  speechSynthesis.cancel();
+  state.chunks = [];
+  state.chunkIndex = 0;
+  setPlaying(false); state.paused = false;
+  pauseBtn.textContent = '⏸️ Pausar';
+  clearHighlight();
+  previewEl.classList.add('hidden');
+  textEl.classList.remove('hidden');
+}
   playBtn.addEventListener('click', startReading);
   pauseBtn.addEventListener('click', pauseReading);
   stopBtn.addEventListener('click', stopReading);
