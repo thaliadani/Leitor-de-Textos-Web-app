@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <title>Leitor de Textos</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg:#0f172a; --card:#1e293b; --card2:#273449;
+      --text:#e2e8f0; --muted:#94a3b8;
+      --accent:#38bdf8; --accent2:#0ea5e9; --danger:#ef4444;
+      --highlight:#fbbf24; --radius:12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 16px; min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    .app { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    header h1 { font-size: 22px; margin: 0 0 4px; }
+    header p { margin: 0; color: var(--muted); font-size: 14px; }
+    .panel { background: var(--card); border-radius: var(--radius); padding: 16px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .btn {
+      background: var(--card2); color: var(--text);
+      border: 1px solid #334155; padding: 10px 16px;
+      border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+    .btn.primary:hover { background: var(--accent); }
+    .btn.danger { background: transparent; border-color: #7f1d1d; color: var(--danger); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+    select {
+      background: var(--card2); color: var(--text);
+      border: 1px solid #334155; padding: 8px; border-radius: 8px; font-size: 14px;
+    }
+    #text {
+      width: 100%; min-height: 180px; background: var(--card2); color: var(--text);
+      border: 1px solid #334155; border-radius: 8px; padding: 12px;
+      font-size: 15px; font-family: inherit; resize: vertical;
+    }
+    #preview {
+      line-height: 1.7; font-size: 16px;
+      max-height: 60vh; overflow-y: auto; white-space: pre-wrap;
+    }
+    #preview span.current { background: var(--highlight); color: #0f172a; border-radius: 4px; padding: 0 2px; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .history-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      background: var(--card2); border-radius: 8px; padding: 10px 12px;
+      display: flex; justify-content: space-between; gap: 12px; align-items: center;
+    }
+    .history-item .preview-text {
+      flex: 1; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; font-size: 14px; cursor: pointer;
+    }
+    .history-item .date { font-size: 12px; color: var(--muted); }
+    .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+    .speed-value { min-width: 36px; text-align: center; color: var(--text); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>📖 Leitor de Textos</h1>
+      <p>Cole, digite ou importe um .txt e ouça em português brasileiro.</p>
+    </header>
+
+    <section class="panel controls">
+      <button id="playBtn" class="btn primary">▶️ Ouvir</button>
+      <button id="pauseBtn" class="btn" disabled>⏸️ Pausar</button>
+      <button id="stopBtn" class="btn" disabled>⏹️ Parar</button>
+      <button id="importBtn" class="btn">📁 Importar .txt</button>
+      <input id="fileInput" type="file" accept=".txt,text/plain" hidden>
+
+      <div class="field">
+        <span>Velocidade</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input id="rate" type="range" min="0.5" max="2" step="0.1" value="1">
+          <span id="rateValue" class="speed-value">1.0x</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <span>Voz</span>
+        <select id="voiceSelect"></select>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="margin-bottom:8px">
+        <strong>Texto</strong>
+        <button id="clearBtn" class="btn danger">🗑️ Limpar</button>
+      </div>
+      <textarea id="text" placeholder="Cole ou digite seu texto aqui..."></textarea>
+      <div id="preview" class="hidden"></div>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <strong>Histórico</strong>
+        <button id="clearHistoryBtn" class="btn danger">Limpar histórico</button>
+      </div>
+      <ul id="historyList" class="history-list"></ul>
+      <div id="historyEmpty" class="empty">Nenhum texto no histórico ainda.</div>
+    </section>
+  </div>
+
+<script>
+  // ============ ESTADO ============
+  const state = {
+    utterance: null, speaking: false, paused: false,
+    voice: null, words: [], currentHighlight: null,
+  };
+  const $ = id => document.getElementById(id);
+  const textEl = $('text'), previewEl = $('preview');
+  const playBtn = $('playBtn'), pauseBtn = $('pauseBtn'), stopBtn = $('stopBtn');
+  const rateEl = $('rate'), rateValueEl = $('rateValue');
+  const voiceSelect = $('voiceSelect'), fileInput = $('fileInput');
+
+  // ============ VOZES ============
+  function getPtVoices() {
+    const all = speechSynthesis.getVoices();
+    const pt = all.filter(v => v.lang && v.lang.toLowerCase().startsWith('pt'));
+    pt.sort((a,b) => {
+      const aBR = a.lang.toLowerCase() === 'pt-br' ? 0 : 1;
+      const bBR = b.lang.toLowerCase() === 'pt-br' ? 0 : 1;
+      return aBR - bBR;
+    });
+    return pt;
+  }
+  function populateVoices() {
+    const voices = getPtVoices();
+    voiceSelect.innerHTML = '';
+    if (!voices.length) {
+      const opt = document.createElement('option');
+      opt.textContent = 'Nenhuma voz PT encontrada';
+      opt.disabled = true;
+      voiceSelect.appendChild(opt);
+      return;
+    }
+    voices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${v.name} (${v.lang})`;
+      voiceSelect.appendChild(opt);
+    });
+    const idxBR = voices.findIndex(v => v.lang.toLowerCase() === 'pt-br');
+    voiceSelect.value = idxBR >= 0 ? idxBR : 0;
+    state.voice = voices[voiceSelect.value] || voices[0];
+  }
+  speechSynthesis.onvoiceschanged = populateVoices;
+  if (speechSynthesis.getVoices().length) populateVoices();
+  voiceSelect.addEventListener('change', () => {
+    state.voice = getPtVoices()[voiceSelect.value] || null;
+  });
+
+  // ============ PREVIEW / DESTAQUE ============
+  function buildPreview(text) {
+    previewEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    const re = /\S+/g;
+    let m, last = 0;
+    state.words = [];
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const span = document.createElement('span');
+      span.textContent = m[0];
+      span.dataset.start = m.index;
+      frag.appendChild(span);
+      state.words.push({ start: m.index, end: m.index + m[0].length, el: span });
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    previewEl.appendChild(frag);
+  }
+  function clearHighlight() {
+    if (state.currentHighlight) {
+      state.currentHighlight.classList.remove('current');
+      state.currentHighlight = null;
+    }
+  }
+  function highlightAt(charIndex) {
+    const words = state.words;
+    let lo = 0, hi = words.length - 1, found = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const w = words[mid];
+      if (charIndex < w.start) hi = mid - 1;
+      else if (charIndex >= w.end) lo = mid + 1;
+      else { found = mid; break; }
+    }
+    if (found === -1) { if (lo < words.length) found = lo; else return; }
+    const el = words[found].el;
+    if (el !== state.currentHighlight) {
+      clearHighlight();
+      el.classList.add('current');
+      state.currentHighlight = el;
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }
+
+  // ============ CONTROLE DE FALA ============
+  function setPlaying(playing) {
+    state.speaking = playing;
+    playBtn.disabled = playing;
+    pauseBtn.disabled = !playing;
+    stopBtn.disabled = !playing;
+  }
+  function startReading() {
+    const text = textEl.value.trim();
+    if (!text) return alert('Digite ou cole um texto primeiro.');
+    speechSynthesis.cancel();
+
+    textEl.classList.add('hidden');
+    previewEl.classList.remove('hidden');
+    buildPreview(textEl.value);
+    clearHighlight();
+
+    const u = new SpeechSynthesisUtterance(textEl.value);
+    u.lang = 'pt-BR';
+    u.rate = parseFloat(rateEl.value);
+    u.pitch = 1;
+    if (state.voice) u.voice = state.voice;
+
+    u.onboundary = (e) => {
+      if (e.name === 'word' || e.name === undefined) highlightAt(e.charIndex);
+    };
+    u.onend = () => { setPlaying(false); state.paused = false; pauseBtn.textContent = '⏸️ Pausar'; clearHighlight(); };
+    u.onerror = (e) => {
+      if (e.error !== 'interrupted' && e.error !== 'canceled') console.error(e);
+      setPlaying(false); state.paused = false;
+    };
+
+    state.utterance = u;
+    setPlaying(true); state.paused = false;
+    pauseBtn.textContent = '⏸️ Pausar';
+    speechSynthesis.speak(u);
+  }
+  function pauseReading() {
+    if (!state.speaking) return;
+    if (!state.paused) {
+      speechSynthesis.pause();
+      state.paused = true;
+      pauseBtn.textContent = '▶️ Retomar';
+    } else {
+      speechSynthesis.resume();
+      state.paused = false;
+      pauseBtn.textContent = '⏸️ Pausar';
+    }
+  }
+  function stopReading() {
+    speechSynthesis.cancel();
+    setPlaying(false); state.paused = false;
+    pauseBtn.textContent = '⏸️ Pausar';
+    clearHighlight();
+    previewEl.classList.add('hidden');
+    textEl.classList.remove('hidden');
+  }
+  playBtn.addEventListener('click', startReading);
+  pauseBtn.addEventListener('click', pauseReading);
+  stopBtn.addEventListener('click', stopReading);
+  rateEl.addEventListener('input', () => {
+    rateValueEl.textContent = parseFloat(rateEl.value).toFixed(1) + 'x';
+    if (state.utterance) state.utterance.rate = parseFloat(rateEl.value);
+  });
+
+  // ============ IMPORTAÇÃO ============
+  $('importBtn').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => { textEl.value = String(reader.result || ''); saveToHistory(textEl.value); };
+    reader.readAsText(f, 'UTF-8');
+    fileInput.value = '';
+  });
+
+  $('clearBtn').addEventListener('click', () => {
+    if (confirm('Limpar o texto atual?')) { textEl.value = ''; previewEl.innerHTML = ''; }
+  });
+
+  // ============ HISTÓRICO ============
+  const HISTORY_KEY = 'leitor.history.v1';
+  const loadHistory = () => { try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; } };
+  const persistHistory = list => localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+
+  function saveToHistory(text) {
+    const trimmed = text.trim(); if (!trimmed) return;
+    const list = loadHistory().filter(i => i.text !== trimmed);
+    list.unshift({ text: trimmed, date: Date.now() });
+    persistHistory(list.slice(0, 20));
+    renderHistory();
+  }
+  function renderHistory() {
+    const list = loadHistory();
+    const ul = $('historyList'); ul.innerHTML = '';
+    $('historyEmpty').classList.toggle('hidden', list.length > 0);
+    list.forEach((item, i) => {
+      const li = document.createElement('li'); li.className = 'history-item';
+      const span = document.createElement('span');
+      span.className = 'preview-text';
+      span.title = item.text.slice(0, 200);
+      span.textContent = item.text.replace(/\s+/g, ' ').slice(0, 120) + (item.text.length > 120 ? '…' : '');
+      span.addEventListener('click', () => { textEl.value = item.text; stopReading(); });
+      const date = document.createElement('span');
+      date.className = 'date';
+      date.textContent = new Date(item.date).toLocaleDateString('pt-BR');
+      const del = document.createElement('button');
+      del.className = 'btn danger'; del.textContent = '✕'; del.title = 'Remover';
+      del.addEventListener('click', () => {
+        const l = loadHistory(); l.splice(i, 1); persistHistory(l); renderHistory();
+      });
+      li.append(span, date, del);
+      ul.appendChild(li);
+    });
+  }
+  $('clearHistoryBtn').addEventListener('click', () => {
+    if (confirm('Apagar todo o histórico?')) { persistHistory([]); renderHistory(); }
+  });
+
+  // ============ PWA ============
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW:', err));
+    });
+  }
+
+  // ============ INIT ============
+  renderHistory();
+  rateValueEl.textContent = parseFloat(rateEl.value).toFixed(1) + 'x';
+</script>
+</body>
+</html>
