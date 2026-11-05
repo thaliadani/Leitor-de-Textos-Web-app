@@ -7,116 +7,109 @@
   <title>Leitor de Textos</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
- <style>
-  :root, [data-theme="dark"] {
-    --bg:#0f172a; --card:#1e293b; --card2:#273449;
-    --text:#e2e8f0; --muted:#94a3b8;
-    --accent:#38bdf8; --accent2:#0ea5e9;
-    --danger:#ef4444; --border-danger:#7f1d1d;
-    --highlight:#fbbf24; --on-highlight:#0f172a;
-    --border:#334155;
-    --radius:12px;
-    color-scheme: dark;
-  }
-  [data-theme="light"] {
-    --bg:#f8fafc; --card:#ffffff; --card2:#f1f5f9;
-    --text:#0f172a; --muted:#64748b;
-    --accent:#0284c7; --accent2:#0ea5e9;
-    --danger:#dc2626; --border-danger:#fecaca;
-    --highlight:#fde047; --on-highlight:#0f172a;
-    --border:#cbd5e1;
-    color-scheme: light;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 16px; min-height: 100vh;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg); color: var(--text);
-    transition: background-color 0.2s, color 0.2s;
-  }
-  .app { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  header h1 { font-size: 22px; margin: 0 0 4px; }
-  header p { margin: 0; color: var(--muted); font-size: 14px; }
-  .panel {
-    background: var(--card); border-radius: var(--radius); padding: 16px;
-    transition: background-color 0.2s;
-  }
-  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .btn {
-    background: var(--card2); color: var(--text);
-    border: 1px solid var(--border); padding: 10px 16px;
-    border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-  }
-  .btn:hover { border-color: var(--accent); }
-  .btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; }
-  .btn.primary:hover { background: var(--accent); }
-  .btn.danger { background: transparent; border-color: var(--border-danger); color: var(--danger); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #themeBtn { font-size: 16px; padding: 8px 12px; }
-  .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
-  select {
-    background: var(--card2); color: var(--text);
-    border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 14px;
-  }
-  #text {
-    width: 100%; min-height: 180px; background: var(--card2); color: var(--text);
-    border: 1px solid var(--border); border-radius: 8px; padding: 12px;
-    font-size: 15px; font-family: inherit; resize: vertical;
-  }
-  #preview {
-    line-height: 1.7; font-size: 16px;
-    max-height: 60vh; overflow-y: auto; white-space: pre-wrap;
-  }
-  #preview span.current {
-    background: var(--highlight); color: var(--on-highlight);
-    border-radius: 4px; padding: 0 2px;
-  }
-  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .history-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
-  .history-item {
-    background: var(--card2); border-radius: 8px; padding: 10px 12px;
-    display: flex; justify-content: space-between; gap: 12px; align-items: center;
-    transition: background-color 0.2s;
-  }
-  .history-item .preview-text {
-    flex: 1; overflow: hidden; text-overflow: ellipsis;
-    white-space: nowrap; font-size: 14px; cursor: pointer;
-  }
-  .history-item .date { font-size: 12px; color: var(--muted); }
-  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
-  .speed-value { min-width: 36px; text-align: center; color: var(--text); }
-  .hidden { display: none !important; }
-/* ===== Controle de tamanho da fonte ===== */
-.font-size-control {
-  display: flex; align-items: center; gap: 6px;
-}
-.font-size-control .btn {
-  padding: 6px 10px; font-size: 16px; line-height: 1;
-  min-width: 36px; justify-content: center;
-}
-.font-size-value {
-  min-width: 40px; text-align: center;
-  font-size: 13px; color: var(--text); font-weight: 600;
-}
+  <style>
+    :root, [data-theme="dark"] {
+      --bg:#0f172a; --card:#1e293b; --card2:#273449;
+      --text:#e2e8f0; --muted:#94a3b8;
+      --accent:#38bdf8; --accent2:#0ea5e9;
+      --danger:#ef4444; --border-danger:#7f1d1d;
+      --highlight:#fbbf24; --on-highlight:#0f172a;
+      --border:#334155;
+      --radius:12px;
+      color-scheme: dark;
+    }
+    [data-theme="light"] {
+      --bg:#f8fafc; --card:#ffffff; --card2:#f1f5f9;
+      --text:#0f172a; --muted:#64748b;
+      --accent:#0284c7; --accent2:#0ea5e9;
+      --danger:#dc2626; --border-danger:#fecaca;
+      --highlight:#fde047; --on-highlight:#0f172a;
+      --border:#cbd5e1;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 16px; min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .app { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    header h1 { font-size: 22px; margin: 0 0 4px; }
+    header p { margin: 0; color: var(--muted); font-size: 14px; }
+    .panel {
+      background: var(--card); border-radius: var(--radius); padding: 16px;
+      transition: background-color 0.2s;
+    }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .btn {
+      background: var(--card2); color: var(--text);
+      border: 1px solid var(--border); padding: 10px 16px;
+      border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;
+      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+    .btn.primary:hover { background: var(--accent); }
+    .btn.danger { background: transparent; border-color: var(--border-danger); color: var(--danger); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    #themeBtn { font-size: 16px; padding: 8px 12px; }
+    .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+    select {
+      background: var(--card2); color: var(--text);
+      border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 14px;
+    }
+    #text {
+      width: 100%; min-height: 180px; background: var(--card2); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+      font-size: var(--reader-font-size, 15px); font-family: inherit; resize: vertical;
+    }
+    #preview {
+      line-height: 1.7; font-size: var(--reader-font-size, 16px);
+      max-height: 60vh; overflow-y: auto; white-space: pre-wrap;
+    }
+    #preview span.current {
+      background: var(--highlight); color: var(--on-highlight);
+      border-radius: 4px; padding: 0 2px;
+    }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .history-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      background: var(--card2); border-radius: 8px; padding: 10px 12px;
+      display: flex; justify-content: space-between; gap: 12px; align-items: center;
+      transition: background-color 0.2s;
+    }
+    .history-item .preview-text {
+      flex: 1; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; font-size: 14px; cursor: pointer;
+    }
+    .history-item .date { font-size: 12px; color: var(--muted); }
+    .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+    .speed-value { min-width: 36px; text-align: center; color: var(--text); }
+    .hidden { display: none !important; }
 
-/* Área de texto e preview herdam o tamanho via variável */
-#text { font-size: var(--reader-font-size, 15px); }
-#preview { font-size: var(--reader-font-size, 16px); }
-
-/* Preview ligeiramente maior que o textarea por padrão */
-</style>
+    /* Controle de tamanho da fonte */
+    .font-size-control { display: flex; align-items: center; gap: 6px; }
+    .font-size-control .btn {
+      padding: 6px 10px; font-size: 16px; line-height: 1;
+      min-width: 36px; justify-content: center;
+    }
+    .font-size-value {
+      min-width: 44px; text-align: center;
+      font-size: 13px; color: var(--text); font-weight: 600;
+    }
+  </style>
 </head>
 <body>
   <div class="app">
     <header>
-  <div>
-    <h1>📖 Leitor de Textos</h1>
-    <p>Cole, digite ou importe um .txt e ouça em português brasileiro.</p>
-  </div>
-  <button id="themeBtn" class="btn" title="Alternar tema">🌙</button>
-</header>
+      <div>
+        <h1>📖 Leitor de Textos</h1>
+        <p>Cole, digite ou importe um .txt e ouça em português brasileiro.</p>
+      </div>
+      <button id="themeBtn" class="btn" title="Alternar tema">🌙</button>
+    </header>
 
     <section class="panel controls">
       <button id="playBtn" class="btn primary">▶️ Ouvir</button>
@@ -125,14 +118,14 @@
       <button id="importBtn" class="btn">📁 Importar .txt</button>
       <input id="fileInput" type="file" accept=".txt,text/plain" hidden>
 
-<div class="field">
-  <span>Tamanho do texto</span>
-  <div class="font-size-control">
-    <button id="fontDecBtn" class="btn" title="Diminuir letra (Ctrl+-)">A−</button>
-    <span id="fontSizeValue" class="font-size-value">100%</span>
-    <button id="fontIncBtn" class="btn" title="Aumentar letra (Ctrl+=)">A+</button>
-  </div>
-</div>
+      <div class="field">
+        <span>Tamanho do texto</span>
+        <div class="font-size-control">
+          <button id="fontDecBtn" class="btn" title="Diminuir letra (Ctrl+-)">A−</button>
+          <span id="fontSizeValue" class="font-size-value">100%</span>
+          <button id="fontIncBtn" class="btn" title="Aumentar letra (Ctrl+=)">A+</button>
+        </div>
+      </div>
 
       <div class="field">
         <span>Velocidade</span>
@@ -151,22 +144,25 @@
     <section class="panel">
       <div class="row" style="margin-bottom:8px">
         <strong>Texto</strong>
-        <button id="clearBtn" class="btn danger">🗑️ Limpar</button>
+        <div style="display:flex;gap:8px">
+          <button id="saveBtn" class="btn">💾 Salvar</button>
+          <button id="clearBtn" class="btn danger">🗑️ Limpar</button>
+        </div>
       </div>
       <textarea id="text" placeholder="Cole ou digite seu texto aqui..."></textarea>
       <div id="preview" class="hidden"></div>
     </section>
 
-<section class="panel">
-  <div class="row">
-    <strong>🔧 Diagnóstico de voz</strong>
-    <div style="display:flex;gap:8px">
-      <button id="testVoiceBtn" class="btn primary">🔊 Testar voz</button>
-      <button id="refreshDiagBtn" class="btn">🔄 Atualizar</button>
-    </div>
-  </div>
-  <div id="diag" style="margin-top:10px;font-size:13px;color:var(--muted);line-height:1.7"></div>
-</section>
+    <section class="panel">
+      <div class="row">
+        <strong>🔧 Diagnóstico de voz</strong>
+        <div style="display:flex;gap:8px">
+          <button id="testVoiceBtn" class="btn primary">🔊 Testar voz</button>
+          <button id="refreshDiagBtn" class="btn">🔄 Atualizar</button>
+        </div>
+      </div>
+      <div id="diag" style="margin-top:10px;font-size:13px;color:var(--muted);line-height:1.7"></div>
+    </section>
 
     <section class="panel">
       <div class="row">
@@ -183,6 +179,7 @@
   const state = {
     utterance: null, speaking: false, paused: false,
     voice: null, words: [], currentHighlight: null,
+    chunks: [], chunkIndex: 0, rate: 1,
   };
   const $ = id => document.getElementById(id);
   const textEl = $('text'), previewEl = $('preview');
@@ -190,11 +187,62 @@
   const rateEl = $('rate'), rateValueEl = $('rateValue');
   const voiceSelect = $('voiceSelect'), fileInput = $('fileInput');
 
+  // ============ SANITIZAÇÃO DE TEXTO ============
+  function sanitizeText(text) {
+    return text
+      .replace(/\uFEFF/g, '')
+      .replace(/[\u200B-\u200D\u2060]/g, '')
+      .replace(/\u00A0/g, ' ')
+      .replace(/[\u2018\u2019\u02BC]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\u2026/g, '...')
+      .replace(/[\u2028\u2029]/g, '\n')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  textEl.addEventListener('paste', () => {
+    setTimeout(() => {
+      const cleaned = sanitizeText(textEl.value);
+      if (cleaned !== textEl.value) {
+        const removed = textEl.value.length - cleaned.length;
+        textEl.value = cleaned;
+        console.log(`🧹 Sanitização removeu ${removed} caractere(s) invisível(is).`);
+      }
+    }, 0);
+  });
+
+  // ============ DIVISÃO EM BLOCOS ============
+  function splitIntoChunks(text, maxLen = 180) {
+    const sentences = text.match(/[^.!?;\n]+[.!?;]?["']?\s*|[^.!?;\n]+$/g) || [text];
+    const chunks = [];
+    let buf = '';
+    for (const s of sentences) {
+      const sTrim = s.trim();
+      if (!sTrim) continue;
+      if ((buf + ' ' + sTrim).trim().length > maxLen && buf) {
+        chunks.push(buf.trim());
+        buf = sTrim;
+      } else {
+        buf = buf ? buf + ' ' + sTrim : sTrim;
+      }
+      if (buf.length > maxLen * 2) {
+        chunks.push(buf.trim());
+        buf = '';
+      }
+    }
+    if (buf.trim()) chunks.push(buf.trim());
+    return chunks;
+  }
+
   // ============ VOZES ============
   function getPtVoices() {
     const all = speechSynthesis.getVoices();
     const pt = all.filter(v => v.lang && v.lang.toLowerCase().startsWith('pt'));
-    pt.sort((a,b) => {
+    pt.sort((a, b) => {
       const aBR = a.lang.toLowerCase() === 'pt-br' ? 0 : 1;
       const bBR = b.lang.toLowerCase() === 'pt-br' ? 0 : 1;
       return aBR - bBR;
@@ -221,7 +269,7 @@
     voiceSelect.value = idxBR >= 0 ? idxBR : 0;
     state.voice = voices[voiceSelect.value] || voices[0];
   }
-  speechSynthesis.onvoiceschanged = populateVoices;
+  speechSynthesis.onvoiceschanged = () => { populateVoices(); updateDiagnostics(); };
   if (speechSynthesis.getVoices().length) populateVoices();
   voiceSelect.addEventListener('change', () => {
     state.voice = getPtVoices()[voiceSelect.value] || null;
@@ -254,6 +302,7 @@
   }
   function highlightAt(charIndex) {
     const words = state.words;
+    if (!words.length) return;
     let lo = 0, hi = words.length - 1, found = -1;
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
@@ -279,143 +328,86 @@
     pauseBtn.disabled = !playing;
     stopBtn.disabled = !playing;
   }
-// Limpa caracteres que travam o TTS
-function sanitizeText(text) {
-  return text
-    .replace(/\uFEFF/g, '')                         // BOM
-    .replace(/[\u200B-\u200D\u2060]/g, '')          // zero-width
-    .replace(/\u00A0/g, ' ')                        // espaço não separável
-    .replace(/[\u2018\u2019\u02BC]/g, "'")          // aspas simples "inteligentes"
-    .replace(/[\u201C\u201D]/g, '"')                // aspas duplas "inteligentes"
-    .replace(/[\u2013\u2014]/g, '-')                // en-dash / em-dash
-    .replace(/\u2026/g, '...')                      // …
-    .replace(/[\u2028\u2029]/g, '\n')               // separadores de linha Unicode
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '') // controles
-    .replace(/\r\n/g, '\n')                         // CRLF → LF
-    .replace(/\n{3,}/g, '\n\n')                     // reduz quebras excessivas
-    .trim();
-}
 
-// Aplica sanitização sempre que o usuário colar
-textEl.addEventListener('paste', () => {
-  setTimeout(() => {
-    const cleaned = sanitizeText(textEl.value);
-    if (cleaned !== textEl.value) {
-      const removed = textEl.value.length - cleaned.length;
-      textEl.value = cleaned;
-      console.log(`🧹 Sanitização removeu ${removed} caractere(s) invisível(is).`);
+  async function startReading() {
+    const raw = textEl.value;
+    if (!raw.trim()) return alert('Digite ou cole um texto primeiro.');
+
+    const clean = sanitizeText(raw);
+    if (clean !== raw) {
+      textEl.value = clean;
+      console.log(`🧹 Texto sanitizado (${raw.length} → ${clean.length} caracteres)`);
     }
-  }, 0);
-});
-// Divide o texto em frases de até ~180 caracteres (limite seguro do Chrome)
-function splitIntoChunks(text, maxLen = 180) {
-  // Quebra em frases
-  const sentences = text.match(/[^.!?;\n]+[.!?;]?["']?\s*|[^.!?;\n]+$/g) || [text];
-  const chunks = [];
-  let buf = '';
-  for (const s of sentences) {
-    const sTrim = s.trim();
-    if (!sTrim) continue;
-    if ((buf + ' ' + sTrim).trim().length > maxLen && buf) {
-      chunks.push(buf.trim());
-      buf = sTrim;
-    } else {
-      buf = buf ? buf + ' ' + sTrim : sTrim;
-    }
-    // Se uma frase sozinha for maior que maxLen, quebra por espaço
-    if (buf.length > maxLen * 2) {
-      chunks.push(buf.trim());
-      buf = '';
-    }
-  }
-  if (buf.trim()) chunks.push(buf.trim());
-  return chunks;
-}
- async function startReading() {
-  const raw = textEl.value;
-  if (!raw.trim()) return alert('Digite ou cole um texto primeiro.');
 
-  // 1) Sanitiza SEMPRE ao iniciar (protege contra textos que vieram de outra origem)
-  const clean = sanitizeText(raw);
-  if (clean !== raw) {
-    textEl.value = clean;
-    console.log(`🧹 Texto sanitizado (${raw.length} → ${clean.length} caracteres)`);
-  }
+    saveToHistory(clean);
 
-  // 2) Destrava motor
-  speechSynthesis.resume();
-  speechSynthesis.cancel();
-  await new Promise(r => setTimeout(r, 80));
+    speechSynthesis.resume();
+    speechSynthesis.cancel();
+    await new Promise(r => setTimeout(r, 80));
 
-  // 3) Prepara preview
-  textEl.classList.add('hidden');
-  previewEl.classList.remove('hidden');
-  buildPreview(clean);
-  clearHighlight();
-
-  // 4) Voz
-  const voice = state.voice || getPtVoices()[0] || null;
-  const rate  = parseFloat(rateEl.value) || 1;
-
-  // 5) Chunking
-  const CHUNK_SIZE = 180;
-  const chunks = splitIntoChunks(clean, CHUNK_SIZE);
-  console.log(`📚 Texto dividido em ${chunks.length} bloco(s) de até ${CHUNK_SIZE} caracteres.`);
-
-  if (chunks.length > 200) {
-    const ok = confirm(
-      `⚠️ Texto muito longo (${clean.length} caracteres, ${chunks.length} blocos).\n` +
-      `A leitura pode levar muito tempo. Continuar?`
-    );
-    if (!ok) { stopReading(); return; }
-  }
-
-  // 6) Fila de leitura
-  state.chunks = chunks;
-  state.chunkIndex = 0;
-  state.voice = voice;
-  state.rate = rate;
-  setPlaying(true); state.paused = false;
-  pauseBtn.textContent = '⏸️ Pausar';
-
-  speakNextChunk();
-  setTimeout(updateDiagnostics, 400);
-}
-
-function speakNextChunk() {
-  if (state.chunkIndex >= state.chunks.length) {
-    setPlaying(false); state.paused = false;
-    pauseBtn.textContent = '⏸️ Pausar';
+    textEl.classList.add('hidden');
+    previewEl.classList.remove('hidden');
+    buildPreview(clean);
     clearHighlight();
-    return;
-  }
-  const idx = state.chunkIndex;
-  const u = new SpeechSynthesisUtterance(state.chunks[idx]);
-  u.lang   = state.voice?.lang || 'pt-BR';
-  u.rate   = state.rate;
-  u.volume = 1;
-  if (state.voice) u.voice = state.voice;
 
-  // Offset acumulado para o destaque ficar no lugar certo
-  u.onboundary = (e) => {
-    if (e.name === 'word' || e.name === undefined) {
-      highlightAt(state.chunkOffsets?.[idx] ?? 0 + e.charIndex);
+    const voice = state.voice || getPtVoices()[0] || null;
+    const rate = parseFloat(rateEl.value) || 1;
+
+    const CHUNK_SIZE = 180;
+    const chunks = splitIntoChunks(clean, CHUNK_SIZE);
+    console.log(`📚 Texto dividido em ${chunks.length} bloco(s) de até ${CHUNK_SIZE} caracteres.`);
+
+    if (chunks.length > 200) {
+      const ok = confirm(
+        `⚠️ Texto muito longo (${clean.length} caracteres, ${chunks.length} blocos).\n` +
+        `A leitura pode levar muito tempo. Continuar?`
+      );
+      if (!ok) { stopReading(); return; }
     }
-  };
-  u.onend = () => {
-    state.chunkIndex++;
-    speakNextChunk();
-  };
-  u.onerror = (e) => {
-    if (e.error === 'interrupted' || e.error === 'canceled') return;
-    console.error('TTS erro no bloco', idx, e.error);
-    state.chunkIndex++;
-    speakNextChunk();
-  };
 
-  state.utterance = u;
-  speechSynthesis.speak(u);
-}
+    state.chunks = chunks;
+    state.chunkIndex = 0;
+    state.voice = voice;
+    state.rate = rate;
+    setPlaying(true); state.paused = false;
+    pauseBtn.textContent = '⏸️ Pausar';
+
+    speakNextChunk();
+    setTimeout(updateDiagnostics, 400);
+  }
+
+  function speakNextChunk() {
+    if (state.chunkIndex >= state.chunks.length) {
+      setPlaying(false); state.paused = false;
+      pauseBtn.textContent = '⏸️ Pausar';
+      clearHighlight();
+      return;
+    }
+    const idx = state.chunkIndex;
+    const u = new SpeechSynthesisUtterance(state.chunks[idx]);
+    u.lang = (state.voice && state.voice.lang) || 'pt-BR';
+    u.rate = state.rate;
+    u.volume = 1;
+    if (state.voice) u.voice = state.voice;
+
+    u.onboundary = (e) => {
+      if (e.name === 'word' || e.name === undefined) highlightAt(e.charIndex);
+    };
+    u.onend = () => {
+      state.chunkIndex++;
+      speakNextChunk();
+    };
+    u.onerror = (e) => {
+      if (e.error === 'interrupted' || e.error === 'canceled') return;
+      console.error('TTS erro no bloco', idx, e.error);
+      state.chunkIndex++;
+      speakNextChunk();
+    };
+
+    state.utterance = u;
+    speechSynthesis.speak(u);
+  }
+
   function pauseReading() {
     if (!state.speaking) return;
     if (!state.paused) {
@@ -428,16 +420,18 @@ function speakNextChunk() {
       pauseBtn.textContent = '⏸️ Pausar';
     }
   }
+
   function stopReading() {
-  speechSynthesis.cancel();
-  state.chunks = [];
-  state.chunkIndex = 0;
-  setPlaying(false); state.paused = false;
-  pauseBtn.textContent = '⏸️ Pausar';
-  clearHighlight();
-  previewEl.classList.add('hidden');
-  textEl.classList.remove('hidden');
-}
+    speechSynthesis.cancel();
+    state.chunks = [];
+    state.chunkIndex = 0;
+    setPlaying(false); state.paused = false;
+    pauseBtn.textContent = '⏸️ Pausar';
+    clearHighlight();
+    previewEl.classList.add('hidden');
+    textEl.classList.remove('hidden');
+  }
+
   playBtn.addEventListener('click', startReading);
   pauseBtn.addEventListener('click', pauseReading);
   stopBtn.addEventListener('click', stopReading);
@@ -451,13 +445,33 @@ function speakNextChunk() {
   fileInput.addEventListener('change', () => {
     const f = fileInput.files[0]; if (!f) return;
     const reader = new FileReader();
-    reader.onload = () => { textEl.value = String(reader.result || ''); saveToHistory(textEl.value); };
+    reader.onload = () => {
+      textEl.value = String(reader.result || '');
+      saveToHistory(textEl.value);
+    };
     reader.readAsText(f, 'UTF-8');
     fileInput.value = '';
   });
 
+  // ============ LIMPAR / SALVAR ============
   $('clearBtn').addEventListener('click', () => {
-    if (confirm('Limpar o texto atual?')) { textEl.value = ''; previewEl.innerHTML = ''; }
+    if (confirm('Limpar o texto atual?')) {
+      stopReading();
+      textEl.value = '';
+      previewEl.innerHTML = '';
+      previewEl.classList.add('hidden');
+      textEl.classList.remove('hidden');
+      textEl.focus();
+    }
+  });
+
+  $('saveBtn').addEventListener('click', () => {
+    const text = sanitizeText(textEl.value);
+    if (!text.trim()) return alert('Nada para salvar.');
+    saveToHistory(text);
+    const original = $('saveBtn').textContent;
+    $('saveBtn').textContent = '✅ Salvo!';
+    setTimeout(() => { $('saveBtn').textContent = original; }, 1200);
   });
 
   // ============ HISTÓRICO ============
@@ -472,6 +486,7 @@ function speakNextChunk() {
     persistHistory(list.slice(0, 20));
     renderHistory();
   }
+
   function renderHistory() {
     const list = loadHistory();
     const ul = $('historyList'); ul.innerHTML = '';
@@ -482,7 +497,12 @@ function speakNextChunk() {
       span.className = 'preview-text';
       span.title = item.text.slice(0, 200);
       span.textContent = item.text.replace(/\s+/g, ' ').slice(0, 120) + (item.text.length > 120 ? '…' : '');
-      span.addEventListener('click', () => { textEl.value = item.text; stopReading(); });
+      span.addEventListener('click', () => {
+        textEl.value = item.text;
+        stopReading();
+        textEl.classList.remove('hidden');
+        previewEl.classList.add('hidden');
+      });
       const date = document.createElement('span');
       date.className = 'date';
       date.textContent = new Date(item.date).toLocaleDateString('pt-BR');
@@ -495,8 +515,138 @@ function speakNextChunk() {
       ul.appendChild(li);
     });
   }
+
   $('clearHistoryBtn').addEventListener('click', () => {
     if (confirm('Apagar todo o histórico?')) { persistHistory([]); renderHistory(); }
+  });
+
+  // ============ TEMA CLARO / ESCURO ============
+  const THEME_KEY = 'leitor.theme';
+  const themeBtn = $('themeBtn');
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    themeBtn.title = theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro';
+    if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#0f172a' : '#f8fafc');
+    localStorage.setItem(THEME_KEY, theme);
+  }
+  function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    applyTheme(saved || (prefersLight ? 'light' : 'dark'));
+  }
+  themeBtn.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+  initTheme();
+
+  // ============ TAMANHO DA FONTE ============
+  const FONT_KEY = 'leitor.fontScale';
+  const FONT_BASE = 15;
+  const FONT_MIN = 70;
+  const FONT_MAX = 220;
+  const FONT_STEP = 10;
+
+  const fontIncBtn = $('fontIncBtn');
+  const fontDecBtn = $('fontDecBtn');
+  const fontSizeValue = $('fontSizeValue');
+  let fontScale = 100;
+
+  function applyFontScale(scale, persist = true) {
+    fontScale = Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round(scale)));
+    const px = (FONT_BASE * fontScale / 100).toFixed(1) + 'px';
+    document.documentElement.style.setProperty('--reader-font-size', px);
+    fontSizeValue.textContent = fontScale + '%';
+    fontIncBtn.disabled = fontScale >= FONT_MAX;
+    fontDecBtn.disabled = fontScale <= FONT_MIN;
+    if (persist) localStorage.setItem(FONT_KEY, String(fontScale));
+  }
+  function initFontScale() {
+    const saved = parseInt(localStorage.getItem(FONT_KEY) || '100', 10);
+    applyFontScale(Number.isFinite(saved) ? saved : 100, false);
+  }
+  fontIncBtn.addEventListener('click', () => applyFontScale(fontScale + FONT_STEP));
+  fontDecBtn.addEventListener('click', () => applyFontScale(fontScale - FONT_STEP));
+  window.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    if (e.key === '+' || e.key === '=') {
+      e.preventDefault(); applyFontScale(fontScale + FONT_STEP);
+    } else if (e.key === '-' || e.key === '_') {
+      e.preventDefault(); applyFontScale(fontScale - FONT_STEP);
+    } else if (e.key === '0') {
+      e.preventDefault(); applyFontScale(100);
+    }
+  });
+  initFontScale();
+
+  // ============ DIAGNÓSTICO DE VOZ ============
+  function updateDiagnostics() {
+    const all = speechSynthesis.getVoices();
+    const pt = getPtVoices();
+    const ptBR = all.filter(v => v.lang && v.lang.toLowerCase() === 'pt-br');
+    const el = $('diag');
+    if (!el) return;
+
+    const statusSpeaking = speechSynthesis.speaking ? '✅' : '❌';
+    const statusPending = speechSynthesis.pending ? '⚠️' : '❌';
+    const statusPaused = speechSynthesis.paused ? '⚠️' : '✅';
+
+    let html = `
+      <div>🎙️ Vozes no sistema: <strong>${all.length}</strong></div>
+      <div>🇧🇷 Vozes em português: <strong>${pt.length}</strong> (pt-BR exatas: ${ptBR.length})</div>
+      <div>🔈 Voz selecionada: <strong>${state.voice ? state.voice.name + ' (' + state.voice.lang + ')' : '(nenhuma — usará padrão)'}</strong></div>
+      <div>📊 Status: falando ${statusSpeaking} · na fila ${statusPending} · pausado ${statusPaused}</div>
+    `;
+
+    if (all.length === 0) {
+      html += `<div style="color:var(--danger);margin-top:8px">
+        ⚠️ <strong>Nenhuma voz instalada no sistema.</strong> Instale uma voz em português.
+      </div>`;
+    } else if (pt.length === 0) {
+      html += `<div style="color:var(--danger);margin-top:8px">
+        ⚠️ <strong>Nenhuma voz em português.</strong> O navegador tentará usar outra voz.
+      </div>`;
+    } else {
+      html += `<div style="color:var(--accent);margin-top:8px">✅ Vozes prontas. Clique em "Testar voz".</div>`;
+    }
+    el.innerHTML = html;
+  }
+
+  $('testVoiceBtn').addEventListener('click', async () => {
+    speechSynthesis.resume();
+    speechSynthesis.cancel();
+    await new Promise(r => setTimeout(r, 100));
+
+    const u = new SpeechSynthesisUtterance('Olá! Este é um teste de voz. Se você está ouvindo, está funcionando!');
+    u.lang = 'pt-BR';
+    u.volume = 1;
+    u.rate = 1;
+
+    const v = state.voice || getPtVoices()[0];
+    if (v) { u.voice = v; u.lang = v.lang; }
+
+    u.onstart = () => console.log('✅ Teste OK');
+    u.onerror = (e) => {
+      alert('Erro no teste de voz: ' + e.error + '\n\nVeja instruções no painel de diagnóstico.');
+    };
+
+    speechSynthesis.speak(u);
+    setTimeout(updateDiagnostics, 500);
+  });
+
+  $('refreshDiagBtn').addEventListener('click', updateDiagnostics);
+
+  $('resetTtsBtn')?.addEventListener('click', () => {
+    speechSynthesis.cancel();
+    speechSynthesis.resume();
+    setTimeout(() => {
+      speechSynthesis.cancel();
+      console.log('Motor de voz resetado. Falando:', speechSynthesis.speaking);
+      updateDiagnostics();
+    }, 200);
   });
 
   // ============ PWA ============
@@ -506,143 +656,10 @@ function speakNextChunk() {
     });
   }
 
-// ============ TEMA CLARO / ESCURO ============
-const THEME_KEY = 'leitor.theme';
-const themeBtn = $('themeBtn');
-const metaTheme = document.querySelector('meta[name="theme-color"]');
-
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
-  themeBtn.title = theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro';
-  if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#0f172a' : '#f8fafc');
-  localStorage.setItem(THEME_KEY, theme);
-}
-
-function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY);
-  const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-  applyTheme(saved || (prefersLight ? 'light' : 'dark'));
-}
-
-themeBtn.addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme') || 'dark';
-  applyTheme(current === 'dark' ? 'light' : 'dark');
-});
-
-initTheme();
-
-// ============ TAMANHO DA FONTE ============
-const FONT_KEY = 'leitor.fontScale';
-const FONT_BASE = 15;      // tamanho base em px (o antigo padrão do textarea)
-const FONT_MIN = 70;       // 70%
-const FONT_MAX = 220;      // 220%
-const FONT_STEP = 10;      // ±10% por clique
-
-const fontIncBtn = $('fontIncBtn');
-const fontDecBtn = $('fontDecBtn');
-const fontSizeValue = $('fontSizeValue');
-
-let fontScale = 100; // %
-
-function applyFontScale(scale, persist = true) {
-  fontScale = Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round(scale)));
-  const px = (FONT_BASE * fontScale / 100).toFixed(1) + 'px';
-  document.documentElement.style.setProperty('--reader-font-size', px);
-  fontSizeValue.textContent = fontScale + '%';
-  fontIncBtn.disabled = fontScale >= FONT_MAX;
-  fontDecBtn.disabled = fontScale <= FONT_MIN;
-  if (persist) localStorage.setItem(FONT_KEY, String(fontScale));
-}
-
-function initFontScale() {
-  const saved = parseInt(localStorage.getItem(FONT_KEY) || '100', 10);
-  applyFontScale(Number.isFinite(saved) ? saved : 100, false);
-}
-
-fontIncBtn.addEventListener('click', () => applyFontScale(fontScale + FONT_STEP));
-fontDecBtn.addEventListener('click', () => applyFontScale(fontScale - FONT_STEP));
-
-// Atalhos de teclado: Ctrl + "+" / Ctrl + "-" / Ctrl + "0" (reset)
-window.addEventListener('keydown', (e) => {
-  if (!(e.ctrlKey || e.metaKey)) return;
-  if (e.key === '+' || e.key === '=') {
-    e.preventDefault(); applyFontScale(fontScale + FONT_STEP);
-  } else if (e.key === '-' || e.key === '_') {
-    e.preventDefault(); applyFontScale(fontScale - FONT_STEP);
-  } else if (e.key === '0') {
-    e.preventDefault(); applyFontScale(100);
-  }
-});
-
-initFontScale();
-
-// ============ DIAGNÓSTICO DE VOZ ============
-function updateDiagnostics() {
-  const all = speechSynthesis.getVoices();
-  const pt  = getPtVoices();
-  const ptBR = all.filter(v => v.lang && v.lang.toLowerCase() === 'pt-br');
-  const el = $('diag');
-  if (!el) return;
-
-  const statusSpeaking = speechSynthesis.speaking ? '✅' : '❌';
-  const statusPending  = speechSynthesis.pending  ? '⚠️' : '❌';
-  const statusPaused   = speechSynthesis.paused   ? '⚠️' : '✅';
-
-  let html = `
-    <div>🎙️ Vozes no sistema: <strong>${all.length}</strong></div>
-    <div>🇧🇷 Vozes em português: <strong>${pt.length}</strong> (pt-BR exatas: ${ptBR.length})</div>
-    <div>🔈 Voz selecionada: <strong>${state.voice ? state.voice.name + ' (' + state.voice.lang + ')' : '(nenhuma — usará padrão)'}</strong></div>
-    <div>📊 Status: falando ${statusSpeaking} · na fila ${statusPending} · pausado ${statusPaused}</div>
-  `;
-
-  if (all.length === 0) {
-    html += `<div style="color:var(--danger);margin-top:8px">
-      ⚠️ <strong>Nenhuma voz instalada no sistema.</strong> Instale uma voz em português (veja abaixo).
-    </div>`;
-  } else if (pt.length === 0) {
-    html += `<div style="color:var(--danger);margin-top:8px">
-      ⚠️ <strong>Nenhuma voz em português.</strong> O navegador tentará usar outra voz com sotaque estrangeiro.
-    </div>`;
-  } else {
-    html += `<div style="color:var(--accent);margin-top:8px">✅ Vozes prontas. Clique em "Testar voz".</div>`;
-  }
-
-  el.innerHTML = html;
-}
-
-// Testar voz (fala uma frase curta independente do texto)
-$('testVoiceBtn').addEventListener('click', async () => {
-  speechSynthesis.resume();
-  speechSynthesis.cancel();
-  await new Promise(r => setTimeout(r, 100));
-
-  const u = new SpeechSynthesisUtterance('Olá! Este é um teste de voz. Se você está ouvindo, está funcionando!');
-  u.lang = 'pt-BR';
-  u.volume = 1;
-  u.rate = 1;
-
-  const v = state.voice || getPtVoices()[0];
-  if (v) { u.voice = v; u.lang = v.lang; }
-
-  u.onstart = () => console.log('✅ Teste OK');
-  u.onerror = (e) => {
-    alert('Erro no teste de voz: ' + e.error + '\n\nVeja instruções no painel de diagnóstico.');
-  };
-
-  speechSynthesis.speak(u);
-  setTimeout(updateDiagnostics, 500);
-});
-
-$('refreshDiagBtn').addEventListener('click', updateDiagnostics);
-
-// Atualiza diag quando vozes carregarem
-speechSynthesis.onvoiceschanged = () => { populateVoices(); updateDiagnostics(); };
-
   // ============ INIT ============
   renderHistory();
-updateDiagnostics();
-rateValueEl.textContent = parseFloat(rateEl.value).toFixed(1) + 'x';
+  rateValueEl.textContent = parseFloat(rateEl.value).toFixed(1) + 'x';
+  updateDiagnostics();
 </script>
 </body>
 </html>
