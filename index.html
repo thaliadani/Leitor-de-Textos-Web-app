@@ -157,6 +157,17 @@
       <div id="preview" class="hidden"></div>
     </section>
 
+<section class="panel">
+  <div class="row">
+    <strong>🔧 Diagnóstico de voz</strong>
+    <div style="display:flex;gap:8px">
+      <button id="testVoiceBtn" class="btn primary">🔊 Testar voz</button>
+      <button id="refreshDiagBtn" class="btn">🔄 Atualizar</button>
+    </div>
+  </div>
+  <div id="diag" style="margin-top:10px;font-size:13px;color:var(--muted);line-height:1.7"></div>
+</section>
+
     <section class="panel">
       <div class="row">
         <strong>Histórico</strong>
@@ -268,36 +279,54 @@
     pauseBtn.disabled = !playing;
     stopBtn.disabled = !playing;
   }
-  function startReading() {
-    const text = textEl.value.trim();
-    if (!text) return alert('Digite ou cole um texto primeiro.');
-    speechSynthesis.cancel();
+ async function startReading() {
+  const text = textEl.value.trim();
+  if (!text) return alert('Digite ou cole um texto primeiro.');
 
-    textEl.classList.add('hidden');
-    previewEl.classList.remove('hidden');
-    buildPreview(textEl.value);
-    clearHighlight();
+  // ---- 1) DESTRAVA o motor (corrige causa #1 e #2) ----
+  speechSynthesis.resume();          // se ficou "paused", destrava
+  speechSynthesis.cancel();          // limpa fila
+  await new Promise(r => setTimeout(r, 80));  // respiro p/ alguns navegadores
 
-    const u = new SpeechSynthesisUtterance(textEl.value);
-    u.lang = 'pt-BR';
-    u.rate = parseFloat(rateEl.value);
-    u.pitch = 1;
-    if (state.voice) u.voice = state.voice;
+  // ---- 2) Prepara preview ----
+  textEl.classList.add('hidden');
+  previewEl.classList.remove('hidden');
+  buildPreview(textEl.value);
+  clearHighlight();
 
-    u.onboundary = (e) => {
-      if (e.name === 'word' || e.name === undefined) highlightAt(e.charIndex);
-    };
-    u.onend = () => { setPlaying(false); state.paused = false; pauseBtn.textContent = '⏸️ Pausar'; clearHighlight(); };
-    u.onerror = (e) => {
-      if (e.error !== 'interrupted' && e.error !== 'canceled') console.error(e);
-      setPlaying(false); state.paused = false;
-    };
+  // ---- 3) Escolhe voz (fallback robusto) ----
+  const voice = state.voice || getPtVoices()[0] || null;
 
-    state.utterance = u;
-    setPlaying(true); state.paused = false;
-    pauseBtn.textContent = '⏸️ Pausar';
-    speechSynthesis.speak(u);
+  // ---- 4) Configura utterance ----
+  const u = new SpeechSynthesisUtterance(textEl.value);
+  u.lang   = (voice && voice.lang) || 'pt-BR';
+  u.rate   = parseFloat(rateEl.value) || 1;
+  u.pitch  = 1;
+  u.volume = 1;                        // garante que não está mudo
+  if (voice) u.voice = voice;
+
+  u.onstart   = () => console.log('🔊 TTS iniciou. Voz:', voice?.name || '(padrão)');
+  u.onboundary = (e) => { if (e.name === 'word' || e.name === undefined) highlightAt(e.charIndex); };
+  u.onend     = () => { setPlaying(false); state.paused = false; pauseBtn.textContent = '⏸️ Pausar'; clearHighlight(); };
+  u.onerror   = (e) => {
+    console.error('TTS erro:', e.error, e);
+    setPlaying(false); state.paused = false;
+  };
+
+  state.utterance = u;
+  setPlaying(true); state.paused = false;
+  pauseBtn.textContent = '⏸️ Pausar';
+
+  // ---- 5) Aviso se não há voz ----
+  if (!speechSynthesis.getVoices().length) {
+    console.warn('⚠️ Nenhuma voz no sistema!');
   }
+
+  speechSynthesis.speak(u);
+
+  // Atualiza painel de diagnóstico
+  setTimeout(updateDiagnostics, 300);
+}
   function pauseReading() {
     if (!state.speaking) return;
     if (!state.paused) {
@@ -457,8 +486,71 @@ window.addEventListener('keydown', (e) => {
 
 initFontScale();
 
+// ============ DIAGNÓSTICO DE VOZ ============
+function updateDiagnostics() {
+  const all = speechSynthesis.getVoices();
+  const pt  = getPtVoices();
+  const ptBR = all.filter(v => v.lang && v.lang.toLowerCase() === 'pt-br');
+  const el = $('diag');
+  if (!el) return;
+
+  const statusSpeaking = speechSynthesis.speaking ? '✅' : '❌';
+  const statusPending  = speechSynthesis.pending  ? '⚠️' : '❌';
+  const statusPaused   = speechSynthesis.paused   ? '⚠️' : '✅';
+
+  let html = `
+    <div>🎙️ Vozes no sistema: <strong>${all.length}</strong></div>
+    <div>🇧🇷 Vozes em português: <strong>${pt.length}</strong> (pt-BR exatas: ${ptBR.length})</div>
+    <div>🔈 Voz selecionada: <strong>${state.voice ? state.voice.name + ' (' + state.voice.lang + ')' : '(nenhuma — usará padrão)'}</strong></div>
+    <div>📊 Status: falando ${statusSpeaking} · na fila ${statusPending} · pausado ${statusPaused}</div>
+  `;
+
+  if (all.length === 0) {
+    html += `<div style="color:var(--danger);margin-top:8px">
+      ⚠️ <strong>Nenhuma voz instalada no sistema.</strong> Instale uma voz em português (veja abaixo).
+    </div>`;
+  } else if (pt.length === 0) {
+    html += `<div style="color:var(--danger);margin-top:8px">
+      ⚠️ <strong>Nenhuma voz em português.</strong> O navegador tentará usar outra voz com sotaque estrangeiro.
+    </div>`;
+  } else {
+    html += `<div style="color:var(--accent);margin-top:8px">✅ Vozes prontas. Clique em "Testar voz".</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// Testar voz (fala uma frase curta independente do texto)
+$('testVoiceBtn').addEventListener('click', async () => {
+  speechSynthesis.resume();
+  speechSynthesis.cancel();
+  await new Promise(r => setTimeout(r, 100));
+
+  const u = new SpeechSynthesisUtterance('Olá! Este é um teste de voz. Se você está ouvindo, está funcionando!');
+  u.lang = 'pt-BR';
+  u.volume = 1;
+  u.rate = 1;
+
+  const v = state.voice || getPtVoices()[0];
+  if (v) { u.voice = v; u.lang = v.lang; }
+
+  u.onstart = () => console.log('✅ Teste OK');
+  u.onerror = (e) => {
+    alert('Erro no teste de voz: ' + e.error + '\n\nVeja instruções no painel de diagnóstico.');
+  };
+
+  speechSynthesis.speak(u);
+  setTimeout(updateDiagnostics, 500);
+});
+
+$('refreshDiagBtn').addEventListener('click', updateDiagnostics);
+
+// Atualiza diag quando vozes carregarem
+speechSynthesis.onvoiceschanged = () => { populateVoices(); updateDiagnostics(); };
+
   // ============ INIT ============
   renderHistory();
+updateDiagnostics();
 rateValueEl.textContent = parseFloat(rateEl.value).toFixed(1) + 'x';
 </script>
 </body>
