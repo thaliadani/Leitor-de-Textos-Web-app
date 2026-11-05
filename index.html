@@ -88,6 +88,24 @@
   .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
   .speed-value { min-width: 36px; text-align: center; color: var(--text); }
   .hidden { display: none !important; }
+/* ===== Controle de tamanho da fonte ===== */
+.font-size-control {
+  display: flex; align-items: center; gap: 6px;
+}
+.font-size-control .btn {
+  padding: 6px 10px; font-size: 16px; line-height: 1;
+  min-width: 36px; justify-content: center;
+}
+.font-size-value {
+  min-width: 40px; text-align: center;
+  font-size: 13px; color: var(--text); font-weight: 600;
+}
+
+/* Área de texto e preview herdam o tamanho via variável */
+#text { font-size: var(--reader-font-size, 15px); }
+#preview { font-size: var(--reader-font-size, 16px); }
+
+/* Preview ligeiramente maior que o textarea por padrão */
 </style>
 </head>
 <body>
@@ -106,6 +124,15 @@
       <button id="stopBtn" class="btn" disabled>⏹️ Parar</button>
       <button id="importBtn" class="btn">📁 Importar .txt</button>
       <input id="fileInput" type="file" accept=".txt,text/plain" hidden>
+
+<div class="field">
+  <span>Tamanho do texto</span>
+  <div class="font-size-control">
+    <button id="fontDecBtn" class="btn" title="Diminuir letra (Ctrl+-)">A−</button>
+    <span id="fontSizeValue" class="font-size-value">100%</span>
+    <button id="fontIncBtn" class="btn" title="Aumentar letra (Ctrl+=)">A+</button>
+  </div>
+</div>
 
       <div class="field">
         <span>Velocidade</span>
@@ -384,6 +411,51 @@ themeBtn.addEventListener('click', () => {
 });
 
 initTheme();
+
+// ============ TAMANHO DA FONTE ============
+const FONT_KEY = 'leitor.fontScale';
+const FONT_BASE = 15;      // tamanho base em px (o antigo padrão do textarea)
+const FONT_MIN = 70;       // 70%
+const FONT_MAX = 220;      // 220%
+const FONT_STEP = 10;      // ±10% por clique
+
+const fontIncBtn = $('fontIncBtn');
+const fontDecBtn = $('fontDecBtn');
+const fontSizeValue = $('fontSizeValue');
+
+let fontScale = 100; // %
+
+function applyFontScale(scale, persist = true) {
+  fontScale = Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round(scale)));
+  const px = (FONT_BASE * fontScale / 100).toFixed(1) + 'px';
+  document.documentElement.style.setProperty('--reader-font-size', px);
+  fontSizeValue.textContent = fontScale + '%';
+  fontIncBtn.disabled = fontScale >= FONT_MAX;
+  fontDecBtn.disabled = fontScale <= FONT_MIN;
+  if (persist) localStorage.setItem(FONT_KEY, String(fontScale));
+}
+
+function initFontScale() {
+  const saved = parseInt(localStorage.getItem(FONT_KEY) || '100', 10);
+  applyFontScale(Number.isFinite(saved) ? saved : 100, false);
+}
+
+fontIncBtn.addEventListener('click', () => applyFontScale(fontScale + FONT_STEP));
+fontDecBtn.addEventListener('click', () => applyFontScale(fontScale - FONT_STEP));
+
+// Atalhos de teclado: Ctrl + "+" / Ctrl + "-" / Ctrl + "0" (reset)
+window.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if (e.key === '+' || e.key === '=') {
+    e.preventDefault(); applyFontScale(fontScale + FONT_STEP);
+  } else if (e.key === '-' || e.key === '_') {
+    e.preventDefault(); applyFontScale(fontScale - FONT_STEP);
+  } else if (e.key === '0') {
+    e.preventDefault(); applyFontScale(100);
+  }
+});
+
+initFontScale();
 
   // ============ INIT ============
   renderHistory();
